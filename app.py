@@ -435,7 +435,7 @@ PAGE = r"""<!doctype html>
   <!-- SEND -->
   <section id="tab-send" class="card">
     <div class="box"><b>Send to this hub</b>
-      <ol><li>Pick photos, videos or files (swipe to grab many).</li>
+      <ol><li>Pick photos (swipe to grab many — <b>~150 at a time</b> is fastest).</li>
           <li>Tap <b>Upload</b> once — they all send together.</li></ol>
     </div>
     <form id="f">
@@ -500,7 +500,19 @@ function tab(name){
 
 var input=$('file'), count=$('count'), go=$('go'), form=$('f');
 var progwrap=$('progwrap'), barFill=document.querySelector('#bar>div'), status=$('status');
+// iOS "prepares" picked photos before handing them over (slow for iCloud/large
+// batches). We can't remove that step, but we show feedback so it isn't frozen.
+var picking=false, prepTimer=null;
+input.addEventListener('click', function(){ picking=true; });
+window.addEventListener('focus', function(){
+  if(picking){
+    count.innerHTML='⏳ Preparing your photos… large batches &amp; iCloud photos take a bit.';
+    clearTimeout(prepTimer);
+    prepTimer=setTimeout(function(){ if(picking){picking=false;count.textContent='No files selected';} }, 180000);
+  }
+});
 input.addEventListener('change', function(){
+  picking=false; clearTimeout(prepTimer);
   var n=input.files.length;
   count.textContent=n?n+' file(s) selected':'No files selected';
   go.disabled=n===0;
