@@ -1,0 +1,3 @@
+# Optional — only needed for the on-screen QR code image.
+# The app runs fine without it (you can still type the link on your phone).
+segno>=1.5

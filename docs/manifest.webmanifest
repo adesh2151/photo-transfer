@@ -1,0 +1,12 @@
+{
+  "name": "Photo Transfer",
+  "short_name": "Photo Transfer",
+  "description": "Send photos & files between your phone and computer over WiFi — no cable, no cloud.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#007aff",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

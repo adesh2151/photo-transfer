@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Photo Transfer — send files from your phone to your computer over WiFi</title>
+<meta name="description" content="Free, private way to send photos & files between your phone and computer over WiFi. No cable, no cloud, no app store. Windows, macOS & Linux.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#007aff">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<!-- ⬇️ CHANGE THIS to your GitHub repo if different -->
+<meta name="repo" content="https://github.com/adesh2151/photo-transfer">
+<style>
+  :root{
+    color-scheme:light dark;
+    --accent:#007aff; --accent2:#5856d6; --green:#34c759;
+    --bg:#f2f2f7; --fg:#111; --card:#fff; --muted:#6b6b70; --line:#e5e5ea;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#000; --fg:#fff; --card:#1c1c1e; --muted:#9a9aa0; --line:#2c2c2e;}
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,sans-serif;
+       background:var(--bg);color:var(--fg);line-height:1.55;}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px;}
+  a{color:var(--accent);text-decoration:none;}
+  header{display:flex;align-items:center;gap:12px;padding:20px 0;}
+  header img{width:44px;height:44px;border-radius:11px;}
+  header b{font-size:18px;}
+  header nav{margin-left:auto;display:flex;gap:18px;font-size:14px;}
+  header nav a{color:var(--muted);}
+  /* hero */
+  .hero{text-align:center;padding:48px 0 32px;}
+  .hero .badge{display:inline-block;font-size:13px;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
+       padding:5px 12px;border-radius:999px;margin-bottom:18px;}
+  .hero h1{font-size:clamp(30px,6vw,52px);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em;}
+  .hero h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent2));
+       -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p{font-size:clamp(16px,2.6vw,20px);color:var(--muted);max-width:620px;margin:0 auto 26px;}
+  .cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:600;
+       padding:13px 22px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;border:none;}
+  .btn small{font-weight:400;opacity:.85;}
+  .hint{font-size:13px;color:var(--muted);margin-top:14px;}
+  /* sections */
+  section{padding:40px 0;border-top:1px solid var(--line);}
+  h2{font-size:clamp(22px,4vw,30px);margin:0 0 6px;letter-spacing:-.01em;}
+  .lead{color:var(--muted);margin:0 0 26px;max-width:640px;}
+  /* downloads */
+  .dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+  .os{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;text-align:center;}
+  .os .emoji{font-size:34px;}
+  .os h3{margin:10px 0 2px;font-size:18px;}
+  .os p{color:var(--muted);font-size:13px;margin:0 0 16px;}
+  .os a.dl-btn{display:block;background:var(--accent);color:#fff;font-weight:600;padding:12px;border-radius:10px;}
+  .os.me{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent);}
+  .os .you{display:none;font-size:12px;color:var(--accent);font-weight:600;margin-bottom:8px;}
+  .os.me .you{display:block;}
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;counter-reset:s;}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;position:relative;}
+  .step::before{counter-increment:s;content:counter(s);display:flex;align-items:center;justify-content:center;
+       width:34px;height:34px;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));
+       color:#fff;font-weight:700;margin-bottom:12px;}
+  .step h3{margin:0 0 6px;font-size:17px;}
+  .step p{margin:0;color:var(--muted);font-size:14px;}
+  /* features */
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .f{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;}
+  .f .i{font-size:22px;} .f h3{margin:8px 0 4px;font-size:16px;} .f p{margin:0;color:var(--muted);font-size:14px;}
+  /* faq */
+  details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px;}
+  summary{cursor:pointer;font-weight:600;}
+  details p{color:var(--muted);margin:10px 0 0;}
+  footer{padding:30px 0 50px;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line);}
+  .note{background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid var(--line);
+        border-radius:14px;padding:16px 18px;font-size:14px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <img src="icon.png" alt="Photo Transfer logo">
+    <b>Photo Transfer</b>
+    <nav>
+      <a href="#download">Download</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="badge">Free · Private · No cloud</span>
+    <h1>Move photos &amp; files<br><span class="grad">phone ↔ computer</span>, over WiFi</h1>
+    <p>No cable. No app store. No account. Open the app, scan a QR code with your phone,
+       and your photos land straight on your computer — and back.</p>
+    <div class="cta">
+      <a class="btn primary" id="smartDownload" href="#download">⬇️ Download <small id="smartOS">for your computer</small></a>
+      <a class="btn" href="#how">See how it works</a>
+    </div>
+    <div class="hint">Works on Windows, macOS &amp; Linux · Your phone needs no install</div>
+  </div>
+
+  <!-- WHAT IT'S FOR -->
+  <section id="about">
+    <h2>What it's for</h2>
+    <p class="lead">A simple way to get photos and videos off your phone — or any file between
+       your devices — without cables, emailing yourself, or uploading to the cloud. Everything
+       stays on your own WiFi and your own computer.</p>
+    <div class="feat">
+      <div class="f"><div class="i">📲</div><h3>Phone → Computer</h3><p>Back up your camera roll to your laptop in a couple of taps.</p></div>
+      <div class="f"><div class="i">💻</div><h3>Computer → Phone</h3><p>Grab files from the computer onto your phone just as easily.</p></div>
+      <div class="f"><div class="i">🔁</div><h3>Phone → Phone</h3><p>Two phones on the same WiFi can pass files through the computer hub.</p></div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section id="download">
+    <h2>Download the app</h2>
+    <p class="lead">Install it on the <b>computer</b> that will receive the files. Your phone
+       doesn't need anything — it just opens a link.</p>
+    <div class="dl">
+      <div class="os" data-os="windows">
+        <div class="you">★ Recommended for you</div>
+        <div class="emoji">🪟</div><h3>Windows</h3><p>Unzip &amp; double-click PhotoTransfer.exe</p>
+        <a class="dl-btn" data-asset="PhotoTransfer-windows.zip" href="#">Download for Windows</a>
+      </div>
+      <div class="os" data-os="mac">
+        <div class="you">★ Recommended for you</div>
+        <div class="emoji">🍎</div><h3>macOS</h3><p>Unzip, right-click → Open the app</p>
+        <a class="dl-btn" data-asset="PhotoTransfer-macos.zip" href="#">Download for macOS</a>
+      </div>
+      <div class="os" data-os="linux">
+        <div class="you">★ Recommended for you</div>
+        <div class="emoji">🐧</div><h3>Linux</h3><p>Unzip &amp; run PhotoTransfer</p>
+        <a class="dl-btn" data-asset="PhotoTransfer-linux.zip" href="#">Download for Linux</a>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:16px">First launch may show an "unknown publisher" warning (the app isn't paid-code-signed) —
+       choose <b>Run anyway</b> (Windows) or right-click → <b>Open</b> (Mac). It's safe; the code is open on GitHub.</p>
+  </section>
+
+  <!-- HOW -->
+  <section id="how">
+    <h2>How to use it</h2>
+    <p class="lead">Three steps. The whole thing takes about a minute.</p>
+    <div class="steps">
+      <div class="step"><h3>Open it on the computer</h3><p>Double-click the app. A window opens showing a QR code.</p></div>
+      <div class="step"><h3>Scan with your phone</h3><p>Same WiFi. Open the Camera, point at the QR, tap the link.</p></div>
+      <div class="step"><h3>Send or receive</h3><p>Pick photos and tap Upload — or grab files the computer has. Done.</p></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <h2>Why you'll like it</h2>
+    <div class="feat">
+      <div class="f"><div class="i">🚫☁️</div><h3>No cloud</h3><p>Files go straight phone→computer. Nothing is uploaded to the internet.</p></div>
+      <div class="f"><div class="i">📱</div><h3>Nothing to install on the phone</h3><p>Your phone just opens a web link or scans a QR.</p></div>
+      <div class="f"><div class="i">⚡</div><h3>Fast &amp; parallel</h3><p>Send many photos at once with a progress bar.</p></div>
+      <div class="f"><div class="i">🔒</div><h3>Access code</h3><p>A PIN keeps others on the WiFi out. Optional HTTPS encrypts it all.</p></div>
+      <div class="f"><div class="i">🖼️</div><h3>HEIC → JPG</h3><p>iPhone photos get a JPG copy that opens everywhere.</p></div>
+      <div class="f"><div class="i">🆓</div><h3>Free &amp; open source</h3><p>No account, no ads, no cost. Inspect the code yourself.</p></div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <h2>Questions</h2>
+    <details><summary>Does my internet provider or the cloud see my photos?</summary>
+      <p>No. The transfer happens on your local WiFi, phone → computer. It never goes out to the internet,
+         so your provider and the cloud aren't involved.</p></details>
+    <details><summary>Do both devices need the same WiFi?</summary>
+      <p>Yes — that's the only requirement. The phone and the computer must be on the same WiFi network.</p></details>
+    <details><summary>Do I need to install anything on my phone?</summary>
+      <p>No. The phone just opens a link (or scans the QR). You can optionally tap "Add to Home Screen"
+         to keep it like an app.</p></details>
+    <details><summary>Is it safe?</summary>
+      <p>It's open source, runs only on your network, and is protected by an access code. You can also turn on
+         encryption (HTTPS) and device approval. Nothing leaves your WiFi.</p></details>
+  </section>
+
+  <div class="note" id="src">
+    Open source — view the code, report issues, or build it yourself on
+    <a id="repoLink" href="#">GitHub</a>.
+  </div>
+
+  <footer>
+    Made with ❤️ for easy, private file sharing. · <a id="repoLink2" href="#">Source on GitHub</a>
+  </footer>
+</div>
+
+<script>
+  // Build all GitHub links from the <meta name="repo"> value.
+  var REPO = (document.querySelector('meta[name=repo]')||{}).content || '#';
+  var LATEST = REPO + '/releases/latest/download/';
+  document.querySelectorAll('[data-asset]').forEach(function(a){ a.href = LATEST + a.dataset.asset; });
+  ['repoLink','repoLink2'].forEach(function(id){ var e=document.getElementById(id); if(e) e.href = REPO; });
+
+  // Detect the visitor's OS and highlight / point the smart button at it.
+  var ua = (navigator.userAgent + ' ' + (navigator.platform||'')).toLowerCase();
+  var os = /win/.test(ua) ? 'windows' : (/mac/.test(ua) && !/iphone|ipad/.test(ua)) ? 'mac'
+         : /linux|x11/.test(ua) && !/android/.test(ua) ? 'linux' : null;
+  var names = {windows:'for Windows', mac:'for macOS', linux:'for Linux'};
+  if(os){
+    var card = document.querySelector('.os[data-os="'+os+'"]');
+    if(card){
+      card.classList.add('me');
+      var smart = document.getElementById('smartDownload');
+      smart.href = LATEST + card.querySelector('[data-asset]').dataset.asset;
+      document.getElementById('smartOS').textContent = names[os];
+    }
+  } else {
+    // Phone or unknown — point the hero button to the download section.
+    document.getElementById('smartOS').textContent = 'for your computer';
+  }
+
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+</script>
+</body>
+</html>

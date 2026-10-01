@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# PyInstaller build output
+build/
+dist/
+*.spec
+icon.ico
+icon.icns
+icon.iconset/
+
+# Local app config (per-machine save folder, access log) + certs
+.photo-transfer.json
+.photo-transfer.log
+.photo-transfer-cert/
+
+# OS cruft
+.DS_Store
+Thumbs.db
