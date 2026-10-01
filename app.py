@@ -485,6 +485,7 @@ PAGE = r"""<!doctype html>
   </section>
 
   <div class="muted">All devices must be on the same WiFi network.</div>
+  <div class="muted" style="margin-top:2px">by <b>Adesh</b></div>
 </div>
 
 <script>
