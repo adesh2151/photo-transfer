@@ -26,8 +26,10 @@ jobs:
         include:
           - os: windows-latest
             asset: PhotoTransfer-windows.zip
-          - os: macos-latest
-            asset: PhotoTransfer-macos.zip
+          - os: macos-13            # Intel Macs
+            asset: PhotoTransfer-macos-intel.zip
+          - os: macos-14            # Apple Silicon (M1–M4)
+            asset: PhotoTransfer-macos-apple-silicon.zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
