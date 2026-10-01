@@ -322,6 +322,19 @@ def convert_heic_to_jpg(src_path):
     return None
 
 
+# Convert HEIC in the background, capped so it never hogs the CPU and never
+# blocks uploads (the upload already responded before this runs).
+_CONVERT_SEM = threading.Semaphore(2)
+
+
+def _bg_convert(path):
+    with _CONVERT_SEM:
+        try:
+            convert_heic_to_jpg(path)
+        except Exception:
+            pass
+
+
 def list_files(limit=1000):
     items = []
     for dirpath, _dirs, files in os.walk(SAVE_ROOT):
@@ -815,8 +828,11 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
 
     def _authed(self):
-        """True if the request carries a valid device session cookie."""
+        """True if the request carries a valid session — or is the host computer itself."""
         if not REQUIRE_AUTH:
+            return True
+        # The machine running the hub never needs to type its own code.
+        if is_localhost(self.client_address[0]):
             return True
         m = re.search(r"pt_sess=([^;]+)", self.headers.get("Cookie", ""))
         return bool(m and session_valid(m.group(1)))
@@ -942,15 +958,12 @@ class Handler(BaseHTTPRequestHandler):
                 full = self._save_stream(length, self.headers.get("X-Filename", ""))
             except Exception as exc:
                 return self.send_error(500, f"save failed: {exc}")
-            if CONVERT_HEIC:
-                try:
-                    jpg = convert_heic_to_jpg(full)
-                    if jpg:
-                        print(f"     (also made {os.path.basename(jpg)})", flush=True)
-                except Exception:
-                    pass
             log_event("UPLOAD", ip, os.path.basename(full))
-            return self._send(b'{"ok":true}', "application/json")
+            self._send(b'{"ok":true}', "application/json")
+            # Convert HEIC in the BACKGROUND so it never slows the upload itself.
+            if CONVERT_HEIC and os.path.splitext(full)[1].lower() in (".heic", ".heif"):
+                threading.Thread(target=_bg_convert, args=(full,), daemon=True).start()
+            return
 
         if parsed.path == "/set-dir":
             # Only the hub computer itself may change where files are saved —
@@ -1068,7 +1081,9 @@ def main():
 
     if not args.no_browser:
         try:
-            webbrowser.open(QR_URL)
+            # Open via localhost so the host computer is auto-recognized (no code
+            # prompt on the machine running the hub). Phones still use the QR.
+            webbrowser.open(f"http://127.0.0.1:{port}/")
         except Exception:
             pass
     try:
