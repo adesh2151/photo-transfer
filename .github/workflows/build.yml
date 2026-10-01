@@ -3,6 +3,10 @@ name: Build apps
 # Builds the double-click standalone app for Windows, macOS and Linux.
 # - Runs on every pushed tag like "v1.0.0" and attaches the zips to a Release.
 # - Can also be run by hand from the Actions tab (workflow_dispatch).
+#
+# NOTE on Linux: the Linux app is built inside an OLD Ubuntu (20.04) container so
+# the binary links against an old glibc and therefore runs on older Linux too.
+# (Building on the newest Ubuntu makes a binary that only runs on the newest Linux.)
 
 on:
   push:
@@ -10,17 +14,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed to create/update the Release
+  contents: write
 
 jobs:
-  build:
+  # ---- Windows & macOS -----------------------------------------------------
+  desktop:
     name: Build on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            asset: PhotoTransfer-linux.zip
           - os: windows-latest
             asset: PhotoTransfer-windows.zip
           - os: macos-latest
@@ -28,39 +31,56 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - run: python -m pip install --upgrade pip segno pyinstaller
+      - run: pyinstaller --noconfirm --onedir --windowed --name PhotoTransfer --hidden-import segno app.py
 
-      - name: Install dependencies
-        run: python -m pip install --upgrade pip segno pyinstaller
-
-      - name: Build standalone app
-        run: pyinstaller --noconfirm --onedir --windowed --name PhotoTransfer --hidden-import segno app.py
-
-      - name: Package (Linux / macOS)
-        if: runner.os != 'Windows'
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
         run: |
           cd dist
-          if [ -d "PhotoTransfer.app" ]; then
-            zip -r -q "../${{ matrix.asset }}" "PhotoTransfer.app"
-          else
-            zip -r -q "../${{ matrix.asset }}" "PhotoTransfer"
-          fi
-
+          if [ -d "PhotoTransfer.app" ]; then zip -r -q "../${{ matrix.asset }}" "PhotoTransfer.app";
+          else zip -r -q "../${{ matrix.asset }}" "PhotoTransfer"; fi
       - name: Package (Windows)
         if: runner.os == 'Windows'
         run: Compress-Archive -Path dist/PhotoTransfer -DestinationPath ${{ matrix.asset }}
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset }}
           path: ${{ matrix.asset }}
-
       - name: Attach to Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.asset }}
+
+  # ---- Linux (built on old glibc for wide compatibility) -------------------
+  linux:
+    name: Build on Linux (glibc 2.31)
+    runs-on: ubuntu-latest
+    container: ubuntu:20.04
+    steps:
+      - name: Install build tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            python3 python3-pip python3-dev zip binutils ca-certificates
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install --upgrade pip segno pyinstaller
+      - run: python3 -m PyInstaller --noconfirm --onedir --name PhotoTransfer --hidden-import segno app.py
+      - name: Package
+        run: |
+          cd dist
+          zip -r -q "../PhotoTransfer-linux.zip" "PhotoTransfer"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PhotoTransfer-linux.zip
+          path: PhotoTransfer-linux.zip
+      - name: Attach to Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: PhotoTransfer-linux.zip
