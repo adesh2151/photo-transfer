@@ -57,7 +57,7 @@ git push origin v1.0.0
 ```
 
 That kicks off the build. A few minutes later, a **Release** appears with
-`PhotoTransfer-windows.zip`, `PhotoTransfer-macos-apple-silicon.zip`, `PhotoTransfer-macos-intel.zip`, and
+`PhotoTransfer-windows.zip`, `PhotoTransfer-macos.zip`, and
 `PhotoTransfer-linux.zip` attached. Share that **Release page link** — done.
 
 (You can also trigger it by hand from the repo's **Actions** tab → *Build apps*
