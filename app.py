@@ -495,6 +495,8 @@ PAGE = r"""<!doctype html>
       </form>
       <div id="dirmsg" class="muted" style="margin-top:6px"></div>
     </details>
+    <button type="button" id="stopbtn" class="big"
+      style="display:none;background:#ff3b30;color:#fff;margin-top:18px">🛑 Stop the hub</button>
   </section>
 
   <div class="muted">All devices must be on the same WiFi network.</div>
@@ -587,6 +589,21 @@ dirform.addEventListener('submit', function(e){
 });
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}
+
+// Stop button — only shown to the host computer.
+if("%%ISHOST%%"==="1"){
+  var sb=$('stopbtn'); sb.style.display='block';
+  sb.addEventListener('click', function(){
+    if(!confirm('Stop Photo Transfer? Connected devices will be disconnected.')) return;
+    fetch('/stop',{method:'POST'}).catch(function(){}).finally(function(){
+      document.body.innerHTML='<div style="padding:60px 20px;text-align:center;'+
+        'font-family:-apple-system,system-ui,sans-serif;color:#888">'+
+        '<div style="font-size:40px">🛑</div><h2>Hub stopped</h2>'+
+        '<p>You can close this tab. To start again, open the app.</p></div>';
+    });
+  });
+}
+
 tab("%%DEFAULTTAB%%");  // hub computer opens on the QR; phones open on Send
 </script>
 </body>
@@ -594,7 +611,7 @@ tab("%%DEFAULTTAB%%");  // hub computer opens on the QR; phones open on Send
 """
 
 
-def render_page(default_tab="send"):
+def render_page(default_tab="send", is_host=False):
     return (PAGE
             .replace("%%APP%%", APP_NAME)
             .replace("%%SHORT%%", SHORT_NAME)
@@ -603,6 +620,7 @@ def render_page(default_tab="send"):
             .replace("%%PIN%%", html.escape(AUTH_PIN))
             .replace("%%SAVE_DIR%%", html.escape(SAVE_ROOT))
             .replace("%%DEFAULTTAB%%", default_tab)
+            .replace("%%ISHOST%%", "1" if is_host else "")
             .replace("%%CONC%%", str(UPLOAD_CONCURRENCY)))
 
 
@@ -860,18 +878,19 @@ class Handler(BaseHTTPRequestHandler):
         # Entry point: the main page. A valid ?k=CODE starts a session (which may
         # need approval on the hub). Otherwise show the unlock screen.
         if path in ("/", "/index.html"):
-            dtab = "connect" if is_localhost(ip) else "send"  # computer sees QR, phone sees Send
+            host = is_localhost(ip)
+            dtab = "connect" if host else "send"  # computer sees QR, phone sees Send
             if authed:
                 touch_activity()
-                return self._send(render_page(dtab))
+                return self._send(render_page(dtab, host))
             if not REQUIRE_AUTH:
-                return self._send(render_page(dtab))
+                return self._send(render_page(dtab, host))
             k = urllib.parse.parse_qs(parsed.query).get("k", [None])[0]
             if k and secrets.compare_digest(k, AUTH_PIN):
                 token = request_session(ip)
                 if token:
                     touch_activity()
-                    return self._send(render_page(dtab),
+                    return self._send(render_page(dtab, host),
                                       extra={"Set-Cookie": self._session_cookie(token)})
                 return self._send(login_page("Not approved. Ask the computer to allow it."),
                                   code=401)
@@ -925,6 +944,15 @@ class Handler(BaseHTTPRequestHandler):
         global SAVE_ROOT
         parsed = urllib.parse.urlparse(self.path)
         ip = self.client_address[0]
+
+        # Stop the hub — only the host computer may do this.
+        if parsed.path == "/stop":
+            if not is_localhost(ip):
+                return self.send_error(403)
+            self._send(b'{"ok":true}', "application/json")
+            print("  🛑 Stop requested from the computer — shutting down.", flush=True)
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
+            return
 
         # Login: validate the access code, then (maybe) wait for approval, set session.
         if parsed.path == "/login":
@@ -1013,8 +1041,8 @@ def main():
                    help="encrypt with a self-signed certificate (one-time trust prompt)")
     p.add_argument("--approve", action="store_true",
                    help="ask you to allow each new device before it can connect")
-    p.add_argument("--idle", type=int, default=0, metavar="MIN",
-                   help="auto-stop after MIN minutes with no activity (0 = never)")
+    p.add_argument("--idle", type=int, default=20, metavar="MIN",
+                   help="auto-stop after MIN minutes with no activity (default 20; 0 = never)")
     args = p.parse_args()
 
     CONVERT_HEIC = not args.no_heic
