@@ -40,6 +40,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = "Photo Transfer"
+APP_VERSION = "1.1.0"
 SHORT_NAME = "Transfer"
 DEFAULT_PORT = 8765
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB per file
@@ -500,7 +501,7 @@ PAGE = r"""<!doctype html>
   </section>
 
   <div class="muted">All devices must be on the same WiFi network.</div>
-  <div class="muted" style="margin-top:2px">by <b>Adesh</b></div>
+  <div class="muted" style="margin-top:2px">by <b>Adesh</b> · v%%VER%%</div>
 </div>
 
 <script>
@@ -614,6 +615,7 @@ tab("%%DEFAULTTAB%%");  // hub computer opens on the QR; phones open on Send
 def render_page(default_tab="send", is_host=False):
     return (PAGE
             .replace("%%APP%%", APP_NAME)
+            .replace("%%VER%%", APP_VERSION)
             .replace("%%SHORT%%", SHORT_NAME)
             .replace("%%THEME%%", THEME)
             .replace("%%URL%%", SERVER_URL)
@@ -650,6 +652,7 @@ LOGIN_PAGE = r"""<!doctype html><html lang="en"><head>
    <div class="err">%%ERR%%</div>
    <input name="pin" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" autofocus>
    <button type="submit">Unlock</button>
+   <p style="margin:14px 0 0;font-size:12px;opacity:.5">v%%VER%%</p>
  </form>
 </body></html>"""
 
@@ -657,6 +660,7 @@ LOGIN_PAGE = r"""<!doctype html><html lang="en"><head>
 def login_page(error=""):
     return (LOGIN_PAGE
             .replace("%%APP%%", APP_NAME)
+            .replace("%%VER%%", APP_VERSION)
             .replace("%%THEME%%", THEME)
             .replace("%%ERR%%", html.escape(error)))
 
@@ -1080,7 +1084,7 @@ def main():
 
     bar = "=" * 56
     print(bar)
-    print(f"  📸  {APP_NAME} — WiFi file hub is running")
+    print(f"  📸  {APP_NAME} v{APP_VERSION} — WiFi file hub is running")
     print(bar)
     print("  Open this on any phone/computer on the SAME WiFi:\n")
     print(f"        {SERVER_URL}\n")
