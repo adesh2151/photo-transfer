@@ -40,7 +40,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = "Photo Transfer"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 SHORT_NAME = "Transfer"
 DEFAULT_PORT = 8765
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB per file
@@ -248,20 +248,25 @@ def manifest_json():
     })
 
 
+# Offline caching was removed — on a LAN hub it gave no benefit and left iOS
+# home-screen installs stuck on a cached copy ("keeps loading"). This worker
+# has NO fetch handler, so it never intercepts requests; on activation it wipes
+# any old caches and unregisters itself, cleaning up phones that still carry the
+# previous caching worker.
 SERVICE_WORKER = """
-const CACHE = 'photo-transfer-v1';
 self.addEventListener('install', e => self.skipWaiting());
-self.addEventListener('activate', e => self.clients.claim());
-self.addEventListener('fetch', e => {
-  // Network-first; fall back to cache so the shell still opens offline.
-  e.respondWith(
-    fetch(e.request).then(r => {
-      if (e.request.method === 'GET' && r.ok) {
-        const c = r.clone(); caches.open(CACHE).then(ch => ch.put(e.request, c));
-      }
-      return r;
-    }).catch(() => caches.match(e.request))
-  );
+self.addEventListener('activate', e => {
+  e.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    } catch (err) {}
+    try { await self.registration.unregister(); } catch (err) {}
+    try {
+      const cs = await self.clients.matchAll();
+      cs.forEach(c => { try { c.navigate(c.url); } catch (err) {} });
+    } catch (err) {}
+  })());
 });
 """
 
@@ -589,7 +594,16 @@ dirform.addEventListener('submit', function(e){
    .then(function(j){dirmsg.innerHTML=j.ok?'<span class="ok">✔ Saving to: '+j.dir+'</span>':'✖ '+(j.error||'failed');});
 });
 
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}
+// No offline caching: unregister any previously-installed worker and drop its
+// caches so old home-screen installs stop serving a stale, stuck copy.
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(rs){
+    rs.forEach(function(r){ r.unregister(); });
+  }).catch(function(){});
+}
+if(window.caches && caches.keys){
+  caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }).catch(function(){});
+}
 
 // Stop button — only shown to the host computer.
 if("%%ISHOST%%"==="1"){
