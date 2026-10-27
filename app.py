@@ -44,7 +44,7 @@ SHORT_NAME = "Transfer"
 DEFAULT_PORT = 8765
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB per file
 CONFIG_FILE = Path.home() / ".photo-transfer.json"
-UPLOAD_CONCURRENCY = 4
+UPLOAD_CONCURRENCY = 6
 THEME = "#007aff"
 
 # Runtime state (set in main()).
@@ -809,6 +809,11 @@ def ensure_cert(ip):
 # HTTP handler
 # ---------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
+    # HTTP/1.1 keeps each connection alive so the upload workers reuse a few
+    # connections across all files instead of opening (and TLS-handshaking) a
+    # fresh one per photo — the big win when sending large batches.
+    protocol_version = "HTTP/1.1"
+
     def setup(self):
         # Do the TLS handshake HERE (in this connection's own worker thread), so a
         # client speaking plain HTTP to the HTTPS port can't block other devices.
