@@ -40,7 +40,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = "Photo Transfer"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 SHORT_NAME = "Transfer"
 DEFAULT_PORT = 8765
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB per file
@@ -454,8 +454,10 @@ PAGE = r"""<!doctype html>
   <!-- SEND -->
   <section id="tab-send" class="card">
     <div class="box"><b>Send to this hub</b>
-      <ol><li>Pick photos (swipe to grab many — <b>~150 at a time</b> is fastest).</li>
-          <li>Tap <b>Upload</b> once — they all send together.</li></ol>
+      <ol><li>Pick <b>30–50 photos at a time</b> — iPhone prepares each one before
+          sending, so huge batches sit on the photo screen for a while (longer if
+          your photos live in iCloud).</li>
+          <li>Tap <b>Upload</b> once — they all send together. Repeat for the next batch.</li></ol>
     </div>
     <form id="f">
       <div class="drop">Choose what to send, then upload.</div>
